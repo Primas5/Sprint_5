@@ -6,34 +6,22 @@ from locators import LoginMadalWindowLocators
 from locators import RegisterNodalWindowLocators
 from locators import AdvertisementCreatePage
 from locators import MainPageLocators
-from locators import Urls
+from urls import Urls
 
-import random
-import string
-
-def generate_random_email():
-    username_length = random.randint(8, 12)
-    username = ''.join(random.choices(string.ascii_lowercase + string.digits, k=username_length))
-    
-    domains = ["ya.ru","gmail.com", "yahoo.com", "outlook.com", "example.ru", "test.net"]
-    domain = random.choice(domains)
-    
-    email = f"{username}@{domain}"
-    return email
+from helpers import generate_random_email
+from data import AD_DATA, LOGIN_DATA, MAIN_PAGE, ERROR_MESSAGES
 
 class TestCreateAD:
-    def test_create_advertisement_without_login(self, webdriver_chrome):
-        driver = webdriver_chrome
+    def test_create_advertisement_without_login(self, driver):
         driver.get(Urls.START_URL)
         #Нажать кнопку «Разместить объявление».
         driver.find_element(*StarterPageLocators.POST_ADVERTISEMENT_BUTTON).click()
 
         #Проверить: отображается модальное окно с заголовком «Чтобы разместить объявление, авторизуйтесь».
         WebDriverWait(driver, 3).until(expected_conditions.visibility_of_element_located(LoginMadalWindowLocators.MESSAGE_AFTER_POST_ADVERTISEMENT_BUTTON))
-        assert 'Чтобы разместить объявление, авторизуйтесь' in driver.find_element(*LoginMadalWindowLocators.MESSAGE_AFTER_POST_ADVERTISEMENT_BUTTON).text
+        assert ERROR_MESSAGES['eroor_create_ad'] in driver.find_element(*LoginMadalWindowLocators.MESSAGE_AFTER_POST_ADVERTISEMENT_BUTTON).text
 
-    def test_succesful_create_advertisement(self, webdriver_chrome):
-        driver = webdriver_chrome
+    def test_succesful_create_advertisement(self, driver):
         driver.get(Urls.START_URL)
 
         #Создание аккаута и выход из него перед тестом
@@ -47,10 +35,10 @@ class TestCreateAD:
 
         #Заполнить все поля формы регистрации и нажать кнопку «Создать аккаунт».
         generated_email = generate_random_email()
-        WebDriverWait(driver, 3).until(expected_conditions.visibility_of_element_located(RegisterNodalWindowLocators.ENTER_EMAIL_FIELD))
+        WebDriverWait(driver, 3).until(expected_conditions.element_to_be_clickable(RegisterNodalWindowLocators.ENTER_EMAIL_FIELD))
         driver.find_element(*RegisterNodalWindowLocators.ENTER_EMAIL_FIELD).send_keys(generated_email)
-        driver.find_element(*RegisterNodalWindowLocators.ENTER_PASSWORD_FIELD).send_keys("123")
-        driver.find_element(*RegisterNodalWindowLocators.REPEAT_PASSWORD_FIELD).send_keys("123")
+        driver.find_element(*RegisterNodalWindowLocators.ENTER_PASSWORD_FIELD).send_keys(LOGIN_DATA['password'])
+        driver.find_element(*RegisterNodalWindowLocators.REPEAT_PASSWORD_FIELD).send_keys(LOGIN_DATA['password'])
         driver.find_element(*RegisterNodalWindowLocators.CREATE_ACCOUT_BUTTON).click()
 
         #Нажать кнопку «Выйти».
@@ -67,7 +55,7 @@ class TestCreateAD:
         #Заполнить все поля формы авторизации и нажать кнопку «Войти».
         WebDriverWait(driver, 3).until(expected_conditions.visibility_of_element_located(LoginMadalWindowLocators.ENTER_EMAIL_FIELD))
         driver.find_element(*LoginMadalWindowLocators.ENTER_EMAIL_FIELD).send_keys(generated_email)
-        driver.find_element(*LoginMadalWindowLocators.ENTER_PASSWORD_FIELD).send_keys("123")
+        driver.find_element(*LoginMadalWindowLocators.ENTER_PASSWORD_FIELD).send_keys(LOGIN_DATA['password'])
         WebDriverWait(driver, 3).until(expected_conditions.element_to_be_clickable(LoginMadalWindowLocators.LOGIN_BUTTON))
         driver.find_element(*LoginMadalWindowLocators.LOGIN_BUTTON).click()
 
@@ -80,9 +68,9 @@ class TestCreateAD:
 
         #Заполнить все поля формы: «Название», «Описание товара», «Стоимость» — стоимость должна быть указана в числовом формате.
         WebDriverWait(driver, 3).until(expected_conditions.visibility_of_element_located(AdvertisementCreatePage.TITLE_FIELD))
-        driver.find_element(*AdvertisementCreatePage.TITLE_FIELD).send_keys('Замок')
-        driver.find_element(*AdvertisementCreatePage.DESCRIPTION_PRODUCT_FIELD).send_keys('Замок для хорошего времяпровождения')
-        driver.find_element(*AdvertisementCreatePage.PRICE_FIELD).send_keys('999999999')
+        driver.find_element(*AdvertisementCreatePage.TITLE_FIELD).send_keys(AD_DATA['title'])
+        driver.find_element(*AdvertisementCreatePage.DESCRIPTION_PRODUCT_FIELD).send_keys(AD_DATA['description'])
+        driver.find_element(*AdvertisementCreatePage.PRICE_FIELD).send_keys(AD_DATA['input_price'])
 
         #Выбрать из Dropdown «Категорию» и «Город».
         driver.find_element(*AdvertisementCreatePage.CATEGOTY_DROPDOWN).click()
@@ -111,6 +99,6 @@ class TestCreateAD:
         WebDriverWait(driver, 10).until(expected_conditions.visibility_of_element_located(AdvertisementCreatePage.CREATED_CARD_CITY_MESSAGE))
         WebDriverWait(driver, 10).until(expected_conditions.visibility_of_element_located(AdvertisementCreatePage.CREATED_CARD_PRICE_MESSAGE))
 
-        assert 'Замок' in driver.find_element(*AdvertisementCreatePage.CREATED_CARD_NAME_MESSAGE).text
-        assert  'Казань' in driver.find_element(*AdvertisementCreatePage.CREATED_CARD_CITY_MESSAGE).text
-        assert  '999 999 999' in driver.find_element(*AdvertisementCreatePage.CREATED_CARD_PRICE_MESSAGE).text
+        assert AD_DATA['title'] in driver.find_element(*AdvertisementCreatePage.CREATED_CARD_NAME_MESSAGE).text
+        assert AD_DATA['city'] in driver.find_element(*AdvertisementCreatePage.CREATED_CARD_CITY_MESSAGE).text
+        assert AD_DATA['visual_price'] in driver.find_element(*AdvertisementCreatePage.CREATED_CARD_PRICE_MESSAGE).text

@@ -5,30 +5,15 @@ from locators import StarterPageLocators
 from locators import LoginMadalWindowLocators
 from locators import RegisterNodalWindowLocators
 from locators import MainPageLocators
-from locators import Urls
+from urls import Urls
 
-import random
-import string
+from helpers import generate_random_email, generate_bad_email
 
-def generate_random_email():
-    username_length = random.randint(8, 12)
-    username = ''.join(random.choices(string.ascii_lowercase + string.digits, k=username_length))
-    
-    domains = ["ya.ru","gmail.com", "yahoo.com", "outlook.com", "example.ru", "test.net"]
-    domain = random.choice(domains)
-    
-    email = f"{username}@{domain}"
-    return email
-
-def generate_bad_email():
-    username_length = random.randint(8, 12)
-    username = ''.join(random.choices(string.ascii_lowercase + string.digits, k=username_length))
-    return username
+from data import AD_DATA, LOGIN_DATA, MAIN_PAGE, ERROR_MESSAGES
 
 class TestRegistration:
-    def test_succesful_register(self, webdriver_chrome):
+    def test_succesful_register(self, driver):
         #Нажать кнопку «Вход и регистрация».
-        driver = webdriver_chrome
         driver.get(Urls.START_URL)
         driver.find_element(*StarterPageLocators.LOGIN_AND_REGISTRTION_BUTTON).click()
 
@@ -39,8 +24,8 @@ class TestRegistration:
         #Заполнить все поля формы регистрации и нажать кнопку «Создать аккаунт».
         WebDriverWait(driver, 3).until(expected_conditions.visibility_of_element_located(RegisterNodalWindowLocators.ENTER_EMAIL_FIELD))
         driver.find_element(*RegisterNodalWindowLocators.ENTER_EMAIL_FIELD).send_keys(generate_random_email())
-        driver.find_element(*RegisterNodalWindowLocators.ENTER_PASSWORD_FIELD).send_keys("123")
-        driver.find_element(*RegisterNodalWindowLocators.REPEAT_PASSWORD_FIELD).send_keys("123")
+        driver.find_element(*RegisterNodalWindowLocators.ENTER_PASSWORD_FIELD).send_keys(LOGIN_DATA['password'])
+        driver.find_element(*RegisterNodalWindowLocators.REPEAT_PASSWORD_FIELD).send_keys(LOGIN_DATA['password'])
         driver.find_element(*RegisterNodalWindowLocators.CREATE_ACCOUT_BUTTON).click()
 
         #Проверить: произошёл переход на главную страницу, в правом верхнем углу около кнопки «Разместить объявление» отображается аватар пользователя и имя User.
@@ -48,11 +33,10 @@ class TestRegistration:
         profile_name = driver.find_element(*MainPageLocators.PROFILE_NAME).text
         WebDriverWait(driver, 3).until(expected_conditions.visibility_of_element_located(MainPageLocators.PROFILE_BUTTON))
         profile_button = driver.find_element(*MainPageLocators.PROFILE_BUTTON).get_attribute('xmlns')
-        assert "User." in profile_name
+        assert MAIN_PAGE['default_profile_name'] in profile_name
         assert Urls.DEFAULT_PROFILE_ICON_URL in profile_button
         
-    def test_wrong_mail_format_register(self, webdriver_chrome):
-        driver = webdriver_chrome
+    def test_wrong_mail_format_register(self, driver):
         driver.get(Urls.START_URL)
         #Нажать кнопку «Вход и регистрация».
         driver.find_element(*StarterPageLocators.LOGIN_AND_REGISTRTION_BUTTON).click()
@@ -73,13 +57,12 @@ class TestRegistration:
         error_border1 = driver.find_element(*RegisterNodalWindowLocators.FIRST_RED_ERROR_BORDER).value_of_css_property('border-color')
         error_border2 = driver.find_element(*RegisterNodalWindowLocators.SECOND_RED_ERROR_BORDER).value_of_css_property('border-color')
         error_border3 = driver.find_element(*RegisterNodalWindowLocators.THIRD_RED_ERROR_BORDER).value_of_css_property('border-color')
-        assert "Ошибка" in error_name
-        assert "rgb(255, 105, 114)" == error_border1
-        assert "rgb(255, 105, 114)" == error_border2
-        assert "rgb(255, 105, 114)" == error_border3
+        assert ERROR_MESSAGES['error_text'] in error_name
+        assert ERROR_MESSAGES['red_border'] == error_border1
+        assert ERROR_MESSAGES['red_border'] == error_border2
+        assert ERROR_MESSAGES['red_border'] == error_border3
 
-    def test_email_already_register(self, webdriver_chrome):
-        driver = webdriver_chrome
+    def test_email_already_register(self, driver):
         driver.get(Urls.START_URL)
         #Нажать кнопку «Вход и регистрация».
         driver.find_element(*StarterPageLocators.LOGIN_AND_REGISTRTION_BUTTON).click()
@@ -93,9 +76,9 @@ class TestRegistration:
 
         #Заполнить все поля формы регистрации и нажать кнопку «Создать аккаунт».
         WebDriverWait(driver, 3).until(expected_conditions.visibility_of_element_located(RegisterNodalWindowLocators.ENTER_EMAIL_FIELD))
-        driver.find_element(*RegisterNodalWindowLocators.ENTER_EMAIL_FIELD).send_keys('adoroshin@ya.ru')
-        driver.find_element(*RegisterNodalWindowLocators.ENTER_PASSWORD_FIELD).send_keys("123")
-        driver.find_element(*RegisterNodalWindowLocators.REPEAT_PASSWORD_FIELD).send_keys("123")
+        driver.find_element(*RegisterNodalWindowLocators.ENTER_EMAIL_FIELD).send_keys(LOGIN_DATA['login'])
+        driver.find_element(*RegisterNodalWindowLocators.ENTER_PASSWORD_FIELD).send_keys(LOGIN_DATA['password'])
+        driver.find_element(*RegisterNodalWindowLocators.REPEAT_PASSWORD_FIELD).send_keys(LOGIN_DATA['password'])
         driver.find_element(*RegisterNodalWindowLocators.CREATE_ACCOUT_BUTTON).click()
 
         #Проверить: поля Email, «Пароль», «Повторите пароль» выделены красным, под полем Email отображается сообщение «Ошибка».
@@ -104,7 +87,7 @@ class TestRegistration:
         error_border1 = driver.find_element(*RegisterNodalWindowLocators.FIRST_RED_ERROR_BORDER).value_of_css_property('border-color')
         error_border2 = driver.find_element(*RegisterNodalWindowLocators.SECOND_RED_ERROR_BORDER).value_of_css_property('border-color')
         error_border3 = driver.find_element(*RegisterNodalWindowLocators.THIRD_RED_ERROR_BORDER).value_of_css_property('border-color')
-        assert "Ошибка" in error_name
-        assert "rgb(255, 105, 114)" == error_border1
-        assert "rgb(255, 105, 114)" == error_border2
-        assert "rgb(255, 105, 114)" == error_border3
+        assert ERROR_MESSAGES['error_text'] in error_name
+        assert ERROR_MESSAGES['red_border'] == error_border1
+        assert ERROR_MESSAGES['red_border'] == error_border2
+        assert ERROR_MESSAGES['red_border'] == error_border3

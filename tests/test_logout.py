@@ -5,24 +5,13 @@ from locators import StarterPageLocators
 from locators import LoginMadalWindowLocators
 from locators import RegisterNodalWindowLocators
 from locators import MainPageLocators
-from locators import Urls
+from urls import Urls
 
-import random
-import string
+from helpers import generate_random_email
 
-def generate_random_email():
-    username_length = random.randint(8, 12)
-    username = ''.join(random.choices(string.ascii_lowercase + string.digits, k=username_length))
-    
-    domains = ["ya.ru","gmail.com", "yahoo.com", "outlook.com", "example.ru", "test.net"]
-    domain = random.choice(domains)
-    
-    email = f"{username}@{domain}"
-    return email
-
+from data import AD_DATA, LOGIN_DATA, MAIN_PAGE, ERROR_MESSAGES
 class TestLogout:
-    def test_succesful_logout(self, webdriver_chrome):
-        driver = webdriver_chrome
+    def test_succesful_logout(self, driver):
         driver.get(Urls.START_URL)
 
         #Создание аккаута и выход из него перед тестом
@@ -38,8 +27,8 @@ class TestLogout:
         generated_email = generate_random_email()
         WebDriverWait(driver, 3).until(expected_conditions.visibility_of_element_located(RegisterNodalWindowLocators.ENTER_EMAIL_FIELD))
         driver.find_element(*RegisterNodalWindowLocators.ENTER_EMAIL_FIELD).send_keys(generated_email)
-        driver.find_element(*RegisterNodalWindowLocators.ENTER_PASSWORD_FIELD).send_keys("123")
-        driver.find_element(*RegisterNodalWindowLocators.REPEAT_PASSWORD_FIELD).send_keys("123")
+        driver.find_element(*RegisterNodalWindowLocators.ENTER_PASSWORD_FIELD).send_keys(LOGIN_DATA['password'])
+        driver.find_element(*RegisterNodalWindowLocators.REPEAT_PASSWORD_FIELD).send_keys(LOGIN_DATA['password'])
         driver.find_element(*RegisterNodalWindowLocators.CREATE_ACCOUT_BUTTON).click()
 
         #Нажать кнопку «Выйти».
@@ -56,22 +45,14 @@ class TestLogout:
         #Заполнить все поля формы авторизации и нажать кнопку «Войти».
         WebDriverWait(driver, 3).until(expected_conditions.visibility_of_element_located(LoginMadalWindowLocators.ENTER_EMAIL_FIELD))
         driver.find_element(*LoginMadalWindowLocators.ENTER_EMAIL_FIELD).send_keys(generated_email)
-        driver.find_element(*LoginMadalWindowLocators.ENTER_PASSWORD_FIELD).send_keys("123")
+        driver.find_element(*LoginMadalWindowLocators.ENTER_PASSWORD_FIELD).send_keys(LOGIN_DATA['password'])
         driver.find_element(*LoginMadalWindowLocators.LOGIN_BUTTON).click()
 
         #Нажать кнопку «Выйти».
         WebDriverWait(driver, 3).until(expected_conditions.element_to_be_clickable(MainPageLocators.EXIT_BUTTON))
         driver.find_element(*MainPageLocators.EXIT_BUTTON).click()
 
-        #Проверить: аватар пользователя и имя User больше не отображается в правом верхнем углу около кнопки «Разместить объявление», 
+        #Проверить: аватар пользователя и имя User больше не отображается в правом верхнем углу около кнопки «Разместить объявление»,
         #там теперь отображается кнопка «Вход и регистрация».
-        try:
-            WebDriverWait(driver, 3).until(expected_conditions.element_to_be_clickable(MainPageLocators.EXIT_BUTTON))
-            profile_name = driver.find_element(*MainPageLocators.PROFILE_NAME).text
-            WebDriverWait(driver, 3).until(expected_conditions.visibility_of_element_located(MainPageLocators.PROFILE_BUTTON))
-            profile_button = driver.find_element(*MainPageLocators.PROFILE_BUTTON).get_attribute('xmlns')
-            assert "User." not in profile_name
-            assert Urls.DEFAULT_PROFILE_ICON_URL not in profile_button
-        except:
-            WebDriverWait(driver, 3).until(expected_conditions.visibility_of_element_located(StarterPageLocators.LOGIN_AND_REGISTRTION_BUTTON))
-            assert "Вход и регистрация" in driver.find_element(*StarterPageLocators.LOGIN_AND_REGISTRTION_BUTTON).text
+        WebDriverWait(driver, 3).until(expected_conditions.visibility_of_element_located(StarterPageLocators.LOGIN_AND_REGISTRTION_BUTTON))
+        assert "Вход и регистрация" in driver.find_element(*StarterPageLocators.LOGIN_AND_REGISTRTION_BUTTON).text
